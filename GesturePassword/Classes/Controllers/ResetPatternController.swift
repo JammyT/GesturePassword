@@ -79,6 +79,9 @@ extension ResetPatternController {
 
     @discardableResult
     public func resetSuccessHandle(_ handle: ((String) -> Void)?) -> ResetPatternController {
+        if let passwordImage = setPatternVC.lockMainView.screenshot() {
+            LockCenter.savePasswordImage(image: passwordImage)
+        }
         setPatternVC.successHandle = handle
         return self
     }

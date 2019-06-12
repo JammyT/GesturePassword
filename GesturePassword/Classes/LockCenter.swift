@@ -7,7 +7,8 @@ let PASSWORD_KEY = "gesture_password_key_"
 public struct LockCenter {
 
     static var storage: Storagable = LockUserDefaults()
-
+    static let lockTime = [1, 5, 30, 60, 180, 720, 1440]
+    
     public static func hasPassword(for key: String? = nil) -> Bool {
         return storage.str(forKey: suffix(with: key)) != nil
     }
@@ -24,10 +25,77 @@ public struct LockCenter {
     public static func password(forKey key: String? = nil) -> String? {
         return storage.str(forKey: suffix(with: key))
     }
+    
+    public static func passwordImage() -> UIImage? {
+        if let passwordImagePath = passwordImagePath(),
+            FileManager.default.fileExists(atPath: passwordImagePath + "/password.png") {
+            return UIImage(contentsOfFile: passwordImagePath + "/password.png")
+        }
+        return nil
+    }
+    
+    public static func passwordBackupTime() -> Date? {
+        if let interval = UserDefaults.standard.object(forKey: "password_backup_time") as? Double, interval > 0 {
+            return Date(timeIntervalSince1970: interval)
+        }
+        return nil
+    }
+    
+    public static func passwordBackupSucceed() {
+        UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: "password_backup_time")
+    }
+    
+    public static func savePasswordImage(image: UIImage) {
+        if let passwordImagePath = passwordImagePath(),
+            let imageData = image.pngData() {
+            do {
+                if FileManager.default.fileExists(atPath: passwordImagePath + "/password.png") {
+                    try FileManager.default.removeItem(atPath: passwordImagePath + "/password.png")
+                }
+                if NSData(data: imageData).write(toFile: passwordImagePath + "/password.png", atomically: true) {
+                    UserDefaults.standard.removeObject(forKey: "password_backup_time")
+                }
+            }
+            catch {
+                print(error.localizedDescription)
+            }
+        }
+    }
 
+    private static func passwordImagePath()->String? {
+        guard let documentPath = NSSearchPathForDirectoriesInDomains(.documentDirectory, FileManager.SearchPathDomainMask.userDomainMask, true).last else {
+            return nil
+        }
+        if !FileManager.default.fileExists(atPath: documentPath + "/password") {
+            do {
+                try FileManager.default.createDirectory(atPath: documentPath + "/password", withIntermediateDirectories: true, attributes: nil)
+            }
+            catch let error {
+                print(error.localizedDescription)
+                return nil
+            }
+        }
+        return documentPath + "/password"
+    }
+    
     public static func setErrorTimes(_ value: Int, forKey key: String? = nil) {
         let key = errorTimesKey(with: key)
         storage.set(value, forKey: key)
+        if value <= 0 {
+            let index = min((-value), lockTime.count - 1)
+            let lockMin = lockTime[index]
+            setUnlockTime(Date().addingTimeInterval(TimeInterval(lockMin * 60)))
+        }
+    }
+    
+    public static func setUnlockTime(_ value: Date?, forKey key: String? = nil) {
+        let key = unLockTimeKey(with: key)
+        if let value = value {
+            storage.set(Int(value.timeIntervalSince1970), forKey: key)
+        }
+        else {
+            storage.removeValue(forKey: key)
+        }
     }
 
     public static func errorTimes(forKey key: String? = nil) -> Int {
@@ -39,14 +107,32 @@ public struct LockCenter {
         }
         return result
     }
+    
+    public static func unLockTime(forKey key: String? = nil) -> Date? {
+        let key = unLockTimeKey(with: key)
+        let result = storage.integer(forKey: key)
+        if result == 0 && storage.str(forKey: key) == nil {
+            if let unlockTime = unlockTime {
+                setUnlockTime(unlockTime)
+                return unlockTime
+            }
+            return nil
+        }
+        return Date(timeIntervalSince1970: TimeInterval(result))
+    }
 
     public static func removeErrorTimes(forKey key: String? = nil) {
         let key = errorTimesKey(with: key)
         storage.removeValue(forKey: key)
+        setUnlockTime(nil)
     }
 
     public static func errorTimesKey(with suffix: String?) -> String {
         return PASSWORD_KEY + "error_times_" + (suffix ?? LockCenter.passwordKeySuffix)
+    }
+    
+    public static func unLockTimeKey(with suffix: String?) -> String {
+        return PASSWORD_KEY + "unlock_time_" + (suffix ?? LockCenter.passwordKeySuffix)
     }
 
     private static func suffix(with str: String?) -> String {
@@ -90,11 +176,23 @@ extension LockCenter {
         return title.replacingOccurrences(of: "$", with: times.description)
     }
     
+    public static func tryAgainPasswordTitle() -> String {
+        return "tryAgainPasswordTitle".localized
+    }
+
+    public static func stopUseTitle(stopTo time: Date) -> String {
+        let title = "tryLaterPasswordTitle".localized
+        return title.replacingOccurrences(of: "$", with: "\(Int(time.timeIntervalSinceNow/60) + 1)")
+    }
+
     // MARK: - 验证密码
     
     /// 密码错误次数
     /// Default 5
     static var errorTimes = 5
+    
+    /// 密码错误次数过多后，停用时间
+    static var unlockTime: Date?
 
     public static var verifyPasswordTitle = "verifyPasswordTitle".localized
     
@@ -138,7 +236,7 @@ extension LockCenter {
     
     /// 普通文字颜色
     /// Default: UIColor(r: 192, g: 192, b: 192)
-    public static var normalTitleColor = UIColor(r: 192, g: 192, b: 192)
+    public static var normalTitleColor = UIColor(r: 51, g: 51, b: 51)
     
     /// 导航栏titleColor
     /// Default: UIColor.black
@@ -175,7 +273,7 @@ public func showSetPattern(in controller: UIViewController) -> SetPatternControl
 @discardableResult
 public func showVerifyPattern(in controller: UIViewController) -> VerifyPatternController {
     let vc = VerifyPatternController()
-    controller.present(LockMainNav(rootViewController: vc), animated: true, completion: nil)
+    controller.present(LockMainNav(rootViewController: vc), animated: false, completion: nil)
     return vc
 }
 

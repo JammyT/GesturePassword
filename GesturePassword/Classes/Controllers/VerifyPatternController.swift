@@ -37,8 +37,7 @@ public final class VerifyPatternController: UIViewController {
         
         view.addSubview(contentView)
         contentView.backgroundColor = .white
-        contentView.widthToSuperview().bottom(to: view, constant: -44)
-
+        contentView.widthToSuperview().centerToSuperview()
         initUI()
     }
 
@@ -61,6 +60,17 @@ public final class VerifyPatternController: UIViewController {
                          constant: 30)
             .centerXToSuperview()
             .bottomToSuperview()
+        if let unlockTime = LockCenter.unLockTime() {
+            if unlockTime.compare(Date()) == .orderedDescending {
+                setLockedUI(to: unlockTime)
+                startCountDownForUnlock()
+            }
+            else {
+                let text = LockCenter.tryAgainPasswordTitle()
+                lockDescLabel.showWarn(with: text)
+            }
+        }
+
     }
 
     @objc
@@ -70,6 +80,44 @@ public final class VerifyPatternController: UIViewController {
 
     public func dismiss() {
         dismiss(animated: true, completion: nil)
+    }
+    
+    func setLockedUI(to time: Date) {
+        let text = LockCenter.stopUseTitle(stopTo: time)
+        lockDescLabel.showWarn(with: text)
+        lockMainView.enable = true
+    }
+    
+    lazy var timer: Timer = {
+        let timer = Timer(timeInterval: 1, target: self, selector: #selector(refreshUIForCountDown), userInfo: nil, repeats: true)
+        timer.fireDate = Date.distantFuture
+        RunLoop.main.add(timer, forMode: .common)
+        return timer
+    }()
+    
+    func startCountDownForUnlock() {
+        timer.fireDate = Date()
+    }
+    
+    @objc func refreshUIForCountDown() {
+        NSLog("%@", "refreshUIForCountDown")
+        if let unlockTime = LockCenter.unLockTime() {
+            if unlockTime.compare(Date()) == .orderedDescending {
+                let text = LockCenter.stopUseTitle(stopTo: unlockTime)
+                lockDescLabel.text = text
+                lockDescLabel.textColor = LockCenter.warningTitleColor
+            }
+            else {
+                let text = LockCenter.tryAgainPasswordTitle()
+                lockDescLabel.showWarn(with: text)
+                timer.fireDate = Date.distantFuture
+                lockMainView.enable = true
+            }
+        }
+    }
+    
+    deinit {
+        timer.invalidate()
     }
 }
 
@@ -108,6 +156,16 @@ extension VerifyPatternController: VerifyPatternDelegate {
 
     func overTimesState() {
         overTimesHandle?(self)
+        if let unlockTime = LockCenter.unLockTime() {
+            if unlockTime.compare(Date()) == .orderedDescending {
+                setLockedUI(to: unlockTime)
+                startCountDownForUnlock()
+            }
+            else {
+                let text = LockCenter.tryAgainPasswordTitle()
+                lockDescLabel.showWarn(with: text)
+            }
+        }
     }
 
     func errorState(_ remainTimes: Int) {

@@ -142,3 +142,17 @@ extension String {
         return NSLocalizedString(self, tableName: "Lock", bundle: Bundle(path: path)!, comment: "")
     }
 }
+
+extension UIView {
+    func screenshot() -> UIImage? {//截取指定UIView
+        if #available(iOS 10.0, *) {
+            let renderer = UIGraphicsImageRenderer(bounds: bounds)
+            return renderer.image { rendererContext in
+                layer.render(in: rendererContext.cgContext)
+            }
+        } else {
+            return nil
+        }
+    }
+
+}

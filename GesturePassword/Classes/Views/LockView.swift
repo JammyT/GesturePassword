@@ -29,7 +29,20 @@ open class LockView: UIView {
             relayoutLayers()
         }
     }
-
+    
+    private var enableView: UIView = {
+        let view = UIView()
+        view.backgroundColor = UIColor.white.withAlphaComponent(0.6)
+        view.isHidden = true
+        return view
+    }()
+    
+    var enable: Bool = true {
+        didSet {
+            enableView.isHidden = enable
+        }
+    }
+    
     private var selectedItemViews: [LockItemLayer] = []
     private var allItemLayers: [LockItemLayer] = []
     private(set) var password = ""
@@ -56,6 +69,8 @@ open class LockView: UIView {
         shapeLayer?.lineJoin = .round
         shapeLayer?.fillColor = UIColor.clear.cgColor
         shapeLayer?.strokeColor = lineColor.cgColor
+        
+        addSubview(enableView)
     }
 
     override open var intrinsicContentSize: CGSize {
@@ -68,14 +83,18 @@ open class LockView: UIView {
     }
 
     override open func touchesBegan(_ touches: Set<UITouch>, with _: UIEvent?) {
+        guard enable else { return }
+        reset()
         processTouch(touches)
     }
 
     override open func touchesMoved(_ touches: Set<UITouch>, with _: UIEvent?) {
+        guard enable else { return }
         processTouch(touches)
     }
 
     override open func touchesEnded(_: Set<UITouch>, with _: UIEvent?) {
+        guard enable else { return }
         touchesEnd()
     }
 
@@ -84,6 +103,11 @@ open class LockView: UIView {
         touchesEnd()
     }
 
+    open override func layoutSubviews() {
+        super.layoutSubviews()
+        enableView.frame = bounds
+    }
+    
     private func layoutLayers() {
         let padding = self.padding
         

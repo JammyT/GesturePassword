@@ -74,10 +74,9 @@ extension LockAdapter {
         var errorTimes = LockCenter.errorTimes()
         errorTimes -= 1
         LockCenter.setErrorTimes(errorTimes)
-        guard errorTimes == 0 else {
-            controller.errorState(errorTimes)
-            return
+        controller.errorState(errorTimes)
+        if errorTimes <= 0 {
+            controller.overTimesState()
         }
-        controller.overTimesState()
     }
 }

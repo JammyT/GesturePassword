@@ -6,25 +6,28 @@
   Copyright © 2018 xiAo_Ju. All rights reserved.
 */
 
-"cancel" = "Cancel";
+"cancel" = "取消";
 
-"redraw" = "Redraw";
+"redraw" = "重绘";
 
-"setPasswordTitle" = "Draw Pattern";
+"setPasswordTitle" = "设置图案密码";
 
-"setPasswordDescTitle" = "Draw Your Pattern";
+"setPasswordDescTitle" = "第一次绘制解锁图案";
 
-"setPasswordTooShortTitle" = "At Least $ Points Required";
+"setPasswordTooShortTitle" = "至少连接$个点，请重新输入";
 
-"setPasswordMismatchTitle" = "Not Match, Please Draw It Again";
+"setPasswordMismatchTitle" = "与上一次绘制不一致，请重新绘制";
 
-"setPasswordAgainTitle" = "Draw Pattern Again";
+"setPasswordAgainTitle" = "再次绘制解锁图案";
 
-"verifyPasswordTitle" = "Verify Password";
+"verifyPasswordTitle" = "验证密码";
 
-"forgotParttern" = "Forgot Pattern?";
+"forgotParttern" = "忘记图案密码？";
 
-"invalidPasswordTitle" = "Invalid Passwod, $ Attempt(s) Left";
+"invalidPasswordTitle" = "密码错误，还可以再输入$次";
 
-"resetPatternTitle" = "Pattern Verification";
+"tryLaterPasswordTitle" = "$分钟后，再次尝试解锁";
 
+"tryAgainPasswordTitle" = "再次尝试解锁";
+
+"resetPatternTitle" = "验证图案密码";
